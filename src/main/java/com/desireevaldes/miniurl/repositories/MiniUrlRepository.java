@@ -12,6 +12,9 @@ import java.util.concurrent.CompletableFuture;
 public interface MiniUrlRepository extends JpaRepository<MiniUrl, String> {
 
     @Async
+    CompletableFuture<Optional<MiniUrl>> findByMiniKey(String miniKey);
+
+    @Async
     CompletableFuture<Optional<MiniUrl>> findByFullUrl(String fullUrl);
 
     @Async
