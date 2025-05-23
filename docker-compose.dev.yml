@@ -1,0 +1,29 @@
+version: "3.8"
+
+services:
+  app-dev:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    image: miniurl:dev
+    ports:
+      - "8080:8080"
+    env_file:
+      - .env.dev
+    depends_on:
+      - db-dev
+
+  db-dev:
+    image: postgres:16-alpine
+    restart: always
+    environment:
+      - POSTGRES_DB=${DB_NAME}
+      - POSTGRES_USER=${DB_USER}
+      - POSTGRES_PASSWORD=${DB_PASS}
+    ports:
+      - "5434:5432"
+    volumes:
+      - pgdata_dev:/var/lib/postgresql/data
+
+volumes:
+  pgdata_dev:

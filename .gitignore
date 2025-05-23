@@ -3,6 +3,17 @@ target/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
+mvnw.cmd
+mvnw
+.mvn/wrapper/maven-wrapper.jar
+.mvn/wrapper/maven-wrapper.properties
+.mvn/wrapper/maven-wrapper.log
+
+### macOS ###
+.DS_Store
+
+### Windows ###
+Thumbs.db
 
 ### STS ###
 .apt_generated
@@ -34,3 +45,8 @@ build/
 
 ### Env ###
 .env
+.env.*
+
+### Log files ###
+*.log
+logs/
