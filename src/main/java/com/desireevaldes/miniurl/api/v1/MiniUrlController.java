@@ -9,6 +9,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.concurrent.CompletableFuture;
 
 @RestController
@@ -57,5 +58,14 @@ public class MiniUrlController {
     public CompletableFuture<Void> deleteMiniUrl(@PathVariable String miniKey) {
         logger.info("Received DELETE request to delete mini-URL with miniKey: {}", miniKey);
         return miniUrlService.deleteMiniUrlAsync(miniKey);
+    }
+
+    @GetMapping
+    public CompletableFuture<List<MiniUrlResponseDto>> getAllMiniUrls() {
+        logger.info("Received GET request to list all mini-URLs");
+        return miniUrlService.getAllMiniUrlsAsync()
+                .thenApply(miniUrls -> miniUrls.stream()
+                        .map(miniUrl -> MiniUrlController.toResponseDto(miniUrl))
+                        .toList());
     }
 }
