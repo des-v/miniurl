@@ -10,6 +10,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -18,6 +19,10 @@ import static org.mockito.Mockito.*;
 
 @ExtendWith(MockitoExtension.class)
 public class MiniUrlServiceTest {
+
+    private static final String MINI_KEY = "abc1234";
+    private static final String ORIGINAL_URL = "https://example.com";
+    private static final String NEW_URL = "https://news.com";
 
     @Mock
     private MiniUrlRepository mockMiniUrlRepository;
@@ -31,43 +36,38 @@ public class MiniUrlServiceTest {
 
     @Test
     public void testGetOrCreateMiniUrlAsync_ReturnsExisting() throws Exception {
-        String fullUrl = "https://example.com";
-
         MiniUrl existingMiniUrl = new MiniUrl();
-        existingMiniUrl.setMiniKey("abc1234");
-        existingMiniUrl.setFullUrl(fullUrl);
+        existingMiniUrl.setMiniKey(MINI_KEY);
+        existingMiniUrl.setFullUrl(ORIGINAL_URL);
 
-        when(mockMiniUrlRepository.findByFullUrl(fullUrl))
+        when(mockMiniUrlRepository.findByFullUrl(ORIGINAL_URL))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(existingMiniUrl)));
 
-        MiniUrl result = miniUrlService.getOrCreateMiniUrlAsync(fullUrl).get();
+        MiniUrl result = miniUrlService.getOrCreateMiniUrlAsync(ORIGINAL_URL).get();
 
         assertEquals(existingMiniUrl.getMiniKey(), result.getMiniKey());
         verify(mockMiniUrlRepository, never()).save(any());
-        verify(mockCustomUrlValidator).validateUrl(fullUrl);
+        verify(mockCustomUrlValidator).validateUrl(ORIGINAL_URL);
     }
 
     @Test
     public void testGetOrCreateMiniUrlAsync_CreatesNew() throws Exception {
-        String url = "https://example.com";
-        String miniKey = "xyz1234";
-
         MiniUrl newMiniUrl = new MiniUrl();
-        newMiniUrl.setMiniKey(miniKey);
-        newMiniUrl.setFullUrl(url);
+        newMiniUrl.setMiniKey(MINI_KEY);
+        newMiniUrl.setFullUrl(ORIGINAL_URL);
 
-        when(mockMiniUrlRepository.findByFullUrl(url))
+        when(mockMiniUrlRepository.findByFullUrl(ORIGINAL_URL))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
-        when(mockRandomKeyGenerator.generateKey()).thenReturn(miniKey);
-        when(mockMiniUrlRepository.existsByMiniKey(miniKey))
+        when(mockRandomKeyGenerator.generateKey()).thenReturn(MINI_KEY);
+        when(mockMiniUrlRepository.existsByMiniKey(MINI_KEY))
                 .thenReturn(CompletableFuture.completedFuture(false));
         when(mockMiniUrlRepository.save(any(MiniUrl.class))).thenReturn(newMiniUrl);
 
-        MiniUrl result = miniUrlService.getOrCreateMiniUrlAsync(url).get();
+        MiniUrl result = miniUrlService.getOrCreateMiniUrlAsync(ORIGINAL_URL).get();
 
-        assertEquals(miniKey, result.getMiniKey());
+        assertEquals(MINI_KEY, result.getMiniKey());
         verify(mockMiniUrlRepository).save(any(MiniUrl.class));
-        verify(mockCustomUrlValidator).validateUrl(url);
+        verify(mockCustomUrlValidator).validateUrl(ORIGINAL_URL);
         verify(mockRandomKeyGenerator).generateKey();
     }
 
@@ -85,19 +85,16 @@ public class MiniUrlServiceTest {
 
     @Test
     public void testGetMiniUrlByMiniKey_ReturnsMiniUrl() throws Exception {
-        String url = "https://example.com";
-        String miniKey = "xyz1234";
-
         MiniUrl miniUrl = new MiniUrl();
-        miniUrl.setMiniKey(miniKey);
-        miniUrl.setFullUrl(url);
+        miniUrl.setMiniKey(MINI_KEY);
+        miniUrl.setFullUrl(ORIGINAL_URL);
 
-        when(mockMiniUrlRepository.findByMiniKey(miniKey))
+        when(mockMiniUrlRepository.findByMiniKey(MINI_KEY))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(miniUrl)));
 
-        MiniUrl result = miniUrlService.getMiniUrlByMiniKey(miniKey).get();
+        MiniUrl result = miniUrlService.getMiniUrlByMiniKey(MINI_KEY).get();
 
-        assertEquals(miniKey, result.getMiniKey());
+        assertEquals(MINI_KEY, result.getMiniKey());
     }
 
     @Test
@@ -114,53 +111,44 @@ public class MiniUrlServiceTest {
 
     @Test
     public void testUpdateMiniUrlAsync_UpdatesIfExists() throws Exception {
-        String url = "https://example.com";
-        String miniKey = "xyz1234";
-
         MiniUrl miniUrl = new MiniUrl();
-        miniUrl.setMiniKey(miniKey);
-        miniUrl.setFullUrl(url);
+        miniUrl.setMiniKey(MINI_KEY);
+        miniUrl.setFullUrl(ORIGINAL_URL);
 
-        String newUrl = "https://news.com";
-
-        when(mockMiniUrlRepository.findByMiniKey(miniKey))
+        when(mockMiniUrlRepository.findByMiniKey(MINI_KEY))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(miniUrl)));
         when(mockMiniUrlRepository.save(any(MiniUrl.class))).thenReturn(miniUrl);
 
-        MiniUrl result = miniUrlService.updateMiniUrlAsync(miniKey, newUrl).get();
-        assertEquals(newUrl, result.getFullUrl());
-        verify(mockCustomUrlValidator).validateUrl(newUrl);
+        MiniUrl result = miniUrlService.updateMiniUrlAsync(MINI_KEY, NEW_URL).get();
+        assertEquals(NEW_URL, result.getFullUrl());
+        verify(mockCustomUrlValidator).validateUrl(NEW_URL);
     }
 
     @Test
     public void testUpdateMiniUrlAsync_FailsIfNotFound() {
         String miniKey = "notfound";
-        String newUrl = "https://news.com";
 
         when(mockMiniUrlRepository.findByMiniKey(miniKey))
                 .thenReturn(CompletableFuture.completedFuture(Optional.empty()));
 
         assertThrows(Exception.class, () -> {
-            miniUrlService.updateMiniUrlAsync(miniKey, newUrl).get();
+            miniUrlService.updateMiniUrlAsync(miniKey, NEW_URL).get();
         });
-        verify(mockCustomUrlValidator).validateUrl(newUrl);
+        verify(mockCustomUrlValidator).validateUrl(NEW_URL);
     }
 
     @Test
     public void testDeleteMiniUrlAsync_DeletesIfExists() throws Exception {
-        String url = "https://example.com";
-        String miniKey = "abc1234";
-
         MiniUrl miniUrl = new MiniUrl();
-        miniUrl.setMiniKey(miniKey);
-        miniUrl.setFullUrl(url);
+        miniUrl.setMiniKey(MINI_KEY);
+        miniUrl.setFullUrl(ORIGINAL_URL);
 
-        when(mockMiniUrlRepository.findByMiniKey(miniKey))
+        when(mockMiniUrlRepository.findByMiniKey(MINI_KEY))
                 .thenReturn(CompletableFuture.completedFuture(Optional.of(miniUrl)));
-        doNothing().when(mockMiniUrlRepository).deleteById(miniKey);
+        doNothing().when(mockMiniUrlRepository).deleteById(MINI_KEY);
 
-        miniUrlService.deleteMiniUrlAsync(miniKey).get();
-        verify(mockMiniUrlRepository).deleteById(miniKey);
+        miniUrlService.deleteMiniUrlAsync(MINI_KEY).get();
+        verify(mockMiniUrlRepository).deleteById(MINI_KEY);
     }
 
     @Test
@@ -173,5 +161,27 @@ public class MiniUrlServiceTest {
         assertThrows(Exception.class, () -> {
             miniUrlService.deleteMiniUrlAsync(miniKey).get();
         });
+    }
+
+    @Test
+    public void testGetAllMiniUrlsAsync_ReturnsAllMiniUrls() throws Exception {
+        MiniUrl miniUrl1 = new MiniUrl();
+        miniUrl1.setMiniKey("abd1234");
+        miniUrl1.setFullUrl("https://google.com");
+
+        MiniUrl miniUrl2 = new MiniUrl();
+        miniUrl2.setMiniKey("zyx1234");
+        miniUrl2.setFullUrl("https://bing.com");
+
+        List<MiniUrl> allMiniUrls = List.of(miniUrl1, miniUrl2);
+
+        when(mockMiniUrlRepository.findAll()).thenReturn(allMiniUrls);
+
+        List<MiniUrl> result = miniUrlService.getAllMiniUrlsAsync().get();
+
+        assertEquals(2, result.size());
+        assertTrue(result.contains(miniUrl1));
+        assertTrue(result.contains(miniUrl2));
+        verify(mockMiniUrlRepository).findAll();
     }
 }

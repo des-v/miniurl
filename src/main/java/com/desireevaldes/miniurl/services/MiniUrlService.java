@@ -10,6 +10,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.CompletableFuture;
 
@@ -148,5 +149,11 @@ public class MiniUrlService {
                     miniUrlRepository.deleteById(miniKey);
                     return CompletableFuture.completedFuture(null);
                 });
+    }
+
+    @Transactional(readOnly = true)
+    public CompletableFuture<List<MiniUrl>> getAllMiniUrlsAsync() {
+        logger.info("Fetching all MiniUrls");
+        return CompletableFuture.supplyAsync(() -> miniUrlRepository.findAll());
     }
 }
